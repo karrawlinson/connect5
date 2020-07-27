@@ -20,6 +20,9 @@ public class ClientApplication implements CommandLineRunner {
 	@Autowired
 	Connect5Service connect5Service;
 	
+	private static final int NUM_ROWS = 6;
+	private static final int NUM_COLS = 9;
+	
 	@Override
 	public void run(String... args) throws Exception {
 		Scanner scanner = new Scanner(System.in);
@@ -63,13 +66,25 @@ public class ClientApplication implements CommandLineRunner {
 
 	private void makeMove(Scanner scanner, Game game, int playerId) {
 		drawGame(game);
-		int column = movePrompt(scanner);
-		try {
-			game = connect5Service.move(game.getId(), column-1, playerId);
-		} catch (RuntimeException e) {
-			System.out.println("Failed to make move - " + e.getMessage() + " - please retry");
-			column = movePrompt(scanner);
-			game = connect5Service.move(game.getId(), column-1, playerId);
+		boolean moveComplete = false;
+		int retries = 0;
+		while(!moveComplete && retries < 3) {
+			try {
+				int column = movePrompt(scanner);
+				if(game.getGameState()[NUM_ROWS-1][column-1] != 0) {
+					System.out.println("That column is full!");
+				} else {
+					game = connect5Service.move(game.getId(), column-1, playerId);					
+					moveComplete = true;
+				}
+			} catch (RuntimeException e) {
+				System.out.println("Failed to make move - " + e.getMessage() + " - please retry");
+				retries++;
+			};
+		}
+		if(retries == 3) {
+			System.out.println("Max retries reached, leaving game");
+			System.exit(1);
 		}
 		drawGame(game);
 	}
@@ -78,6 +93,7 @@ public class ClientApplication implements CommandLineRunner {
 		int column = 0;
 		// ensure user can only enter a value between 1 and 9
 		while(column < 1 || column > 9) {
+			
 			System.out.println("It's your move, pick a column [1-9]");
 			while(!scanner.hasNextInt()) {
 				System.out.println("Invalid column, pick a column [1-9]" + " - please retry");
@@ -91,8 +107,8 @@ public class ClientApplication implements CommandLineRunner {
 
 	private void drawGame(Game game) {
 		
-		for (int row = 5; row >= 0; row--) {
-			for (int col = 0; col < 9; col++) {
+		for (int row = NUM_ROWS-1; row >= 0; row--) {
+			for (int col = 0; col < NUM_COLS; col++) {
 				System.out.print("[ " + formatEntry(game.getGameState()[row][col]) + " ]");
 			}
 			System.out.println();

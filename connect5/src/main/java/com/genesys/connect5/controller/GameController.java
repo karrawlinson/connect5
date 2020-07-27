@@ -1,4 +1,5 @@
 package com.genesys.connect5.controller;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,41 +18,45 @@ import com.genesys.connect5.service.GameService;
 
 @RestController()
 public class GameController {
-	
+
 	Logger logger = LoggerFactory.getLogger(GameController.class);
 
 	@Autowired
 	GameService gameService;
-	
+
 	@GetMapping("/game/{id}")
 	public Game getGame(@PathVariable("id") Long id) {
 		Game game = gameService.getGame(id);
-		if(game != null) {
+		if (game != null) {
 			return game;
-		}else {
-			 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Game Not Found");
+		} else {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Game Not Found");
 		}
-		
+
 	}
-	
+
 	@PostMapping("/game")
 	public Player joinGame() {
-		
+
 		return gameService.joinPendingGame();
-		
+
 	}
-	
+
 	@PostMapping("/game/{id}/move")
 	public Game move(@PathVariable("id") Long id, @RequestBody Move move) {
-		
+
 		Game game = gameService.getGame(id);
-		if (game.getCurrentPlayer() != move.getPlayer()) {
+		if (game == null) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Game Not Found");
+		} else if (game.getCurrentPlayer() != move.getPlayer()) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "It is not your move!");
-		}else if (!(game.getCurrentStatus().equals(Game.GameStatus.IN_PROGRESS))){
+		} else if (!(game.getCurrentStatus().equals(Game.GameStatus.IN_PROGRESS))) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The game is not in progress!");
-		}else if(move.getColumn() < 0 || move.getColumn() > 8){
+		} else if (move.getColumn() < 0 || move.getColumn() > 8) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid column!");
-		}else {
+		} else if (game.getGameState()[Game.NUM_ROWS - 1][move.getColumn()] != 0) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Column is full!");
+		} else {
 			game = gameService.playMove(game, move);
 		}
 		return game;

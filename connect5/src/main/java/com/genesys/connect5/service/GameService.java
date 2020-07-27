@@ -71,26 +71,17 @@ public class GameService {
 	 * @return
 	 */
 	public Game playMove(Game game, Move move) {
-		boolean validMove = false;
 		int[][] gameState = game.getGameState();
 		for (int row = 0; row < Game.NUM_ROWS; row++) {
 			if (gameState[row][move.getColumn()] == 0) {
 				gameState[row][move.getColumn()] = move.getPlayer();
-				validMove = true;
+				game.setLastMove(System.currentTimeMillis());
+				int otherPlayer = move.getPlayer() == 1 ? 2 : 1;
+				game.setCurrentPlayer(otherPlayer);
 				break;
 			}
 		}
-
-		if (!validMove) {
-			throw new RuntimeException("Invalid move");
-		}
-		game.setLastMove(System.currentTimeMillis());
-		if (move.getPlayer() == 1) {
-			game.setCurrentPlayer(2);
-		} else {
-			game.setCurrentPlayer(1);
-		}
-
+		
 		if (isGameWon(game, move.getPlayer())) {
 			game.setCurrentStatus(Game.GameStatus.COMPLETE);
 			game.setWinner(move.getPlayer());
@@ -166,11 +157,8 @@ public class GameService {
 					&& g.getLastMove() < (System.currentTimeMillis() - 1000 * 60 * 5)) {
 				logger.info("Timing out game as time to move has expired");
 				g.setCurrentStatus(Game.GameStatus.COMPLETE);
-				if (g.getCurrentPlayer() == 1) {
-					g.setWinner(2);
-				} else {
-					g.setWinner(1);
-				}
+				int winner = g.getCurrentPlayer() == 1 ? 2 : 1;
+				g.setWinner(winner);
 			}
 		}
 	}

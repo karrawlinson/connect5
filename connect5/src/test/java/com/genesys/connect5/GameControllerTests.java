@@ -53,6 +53,15 @@ public class GameControllerTests {
 	}
 	
 	@Test
+	public void moveGameNotFoundTest() throws Exception {
+		
+		this.mockMvc.perform(post("/game/100/move").contentType("application/json")
+				.content(objectMapper.writeValueAsString(new Move(1, 1))))
+				.andDo(print()).andExpect(status().isNotFound());
+		
+	}
+	
+	@Test
 	public void invalidMoveTest1() throws Exception {
 		Game game = new Game();
 		game.setCurrentStatus(GameStatus.COMPLETE);
@@ -68,13 +77,42 @@ public class GameControllerTests {
 	@Test
 	public void invalidMoveTest2() throws Exception {
 		Game game = new Game();
-		game.setCurrentStatus(GameStatus.COMPLETE);
+		game.setCurrentStatus(GameStatus.IN_PROGRESS);
 		game.setCurrentPlayer(2);
 		when(service.getGame(game.getId())).thenReturn(game);
 		this.mockMvc.perform(post("/game/" + game.getId() + "/move").contentType("application/json")
 				.content(objectMapper.writeValueAsString(new Move(1, 1))))
 				.andDo(print()).andExpect(status().isBadRequest())
 				.andExpect(result -> assertEquals("It is not your move!", result.getResponse().getErrorMessage()));
+		
+	}
+	
+	@Test
+	public void invalidMoveTest3() throws Exception {
+		Game game = new Game();
+		int[][] gameState = game.getGameState();
+		gameState[5][1] = 1;
+		game.setGameState(gameState);
+		game.setCurrentPlayer(1);
+		game.setCurrentStatus(GameStatus.IN_PROGRESS);
+		when(service.getGame(game.getId())).thenReturn(game);
+		this.mockMvc.perform(post("/game/" + game.getId() + "/move").contentType("application/json")
+				.content(objectMapper.writeValueAsString(new Move(1, 1))))
+				.andDo(print()).andExpect(status().isBadRequest())
+				.andExpect(result -> assertEquals("Column is full!", result.getResponse().getErrorMessage()));
+		
+	}
+	
+	@Test
+	public void invalidMoveTest4() throws Exception {
+		Game game = new Game();
+		game.setCurrentStatus(GameStatus.IN_PROGRESS);
+		game.setCurrentPlayer(1);
+		when(service.getGame(game.getId())).thenReturn(game);
+		this.mockMvc.perform(post("/game/" + game.getId() + "/move").contentType("application/json")
+				.content(objectMapper.writeValueAsString(new Move(1, 10))))
+				.andDo(print()).andExpect(status().isBadRequest())
+				.andExpect(result -> assertEquals("Invalid column!", result.getResponse().getErrorMessage()));
 		
 	}
 	

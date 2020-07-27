@@ -118,4 +118,20 @@ public class GameServiceTests {
 		assert(game.getGameState()[0][1] == 1);
 		assert(game.getCurrentPlayer() == 2);
 	}
+	
+	@Test
+	public void testPlayWinningMove() {
+		Game game = new Game();
+		game.setCurrentPlayer(2);
+		int[][] gameState = game.getGameState();
+		for(int i=0; i<4; i++) {
+			gameState[i][1] = 2;
+		}
+		game.setGameState(gameState);
+		game = gameService.playMove(game, new Move(2, 1));
+		
+		assert(game.getGameState()[4][1] == 2);
+		assert(game.getCurrentStatus().equals(Game.GameStatus.COMPLETE));
+		assert(game.getWinner() == 2);
+	}
 }
